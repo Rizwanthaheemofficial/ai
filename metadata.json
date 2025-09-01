@@ -1,0 +1,7 @@
+{
+  "name": "Orbit - AI Social Growth Platform",
+  "description": "An AI-first SaaS platform with a full suite of tools for social media growth, including a Trend Radar, Brand Voice Trainer, Universal Inbox with AI Assistant, and Sentiment Analytics. Features a comprehensive admin panel for full platform control.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
