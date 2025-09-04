@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
-import { Users, FileText, DollarSign, Sparkles, Send, MessageSquare, UserPlus, FileUp } from 'lucide-react';
-import { MOCK_USERS, MOCK_POSTS_BY_PLATFORM, MOCK_RECENT_ACTIVITY, MOCK_MONTHLY_GROWTH_DATA, MOCK_AI_ACTIVITY_DATA } from '../../constants';
+
+import React, { useState, useMemo, useContext } from 'react';
+import { Users, FileText, DollarSign, Sparkles, Send, MessageSquare, UserPlus, FileUp, TrendingUp, PenSquare, BotMessageSquare } from 'lucide-react';
+import { MOCK_USERS, MOCK_MONTHLY_GROWTH_DATA } from '../../constants';
 import { useNotification } from '../../context/NotificationContext';
 import { PostContext } from '../../context/PostContext';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, CartesianGrid } from 'recharts';
-import { ActivityItem, AiActivityData } from '../../types';
+import { ActivityItem, AiActivityData, MonthlyGrowthData, PostCount, SocialProvider, User } from '../../types';
+import { useActivity } from '../../context/ActivityContext';
+import useLocalStorage from '../../hooks/useLocalStorage';
 
 const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; color: string }> = ({ title, value, icon, color }) => (
     <div className="bg-gray-800 p-6 rounded-lg flex items-center shadow-lg">
@@ -29,7 +32,10 @@ const ActivityIcon: React.FC<{type: ActivityItem['type']}> = ({ type }) => {
 
 const AdminDashboardPage: React.FC = () => {
     const { addNotification } = useNotification();
-    const { posts } = React.useContext(PostContext);
+    const { posts } = useContext(PostContext);
+    const { recentActivity, apiLogs } = useActivity();
+    const [users] = useLocalStorage<User[]>('orbit_users', MOCK_USERS);
+    const [monthlyGrowthData] = useLocalStorage<MonthlyGrowthData[]>('orbit_monthly_growth', MOCK_MONTHLY_GROWTH_DATA);
     const [announcement, setAnnouncement] = useState('');
 
     const handleSendAnnouncement = () => {
@@ -41,8 +47,42 @@ const AdminDashboardPage: React.FC = () => {
         setAnnouncement('');
     };
     
-    const totalAiUsage = MOCK_AI_ACTIVITY_DATA.reduce((sum, item) => sum + item.count, 0);
-    const totalRevenue = MOCK_MONTHLY_GROWTH_DATA.reduce((sum, item) => sum + item.revenue, 0);
+    const postsByPlatform: PostCount[] = useMemo(() => {
+        const counts = posts.reduce((acc, post) => {
+            acc[post.provider] = (acc[post.provider] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        
+        return Object.values(SocialProvider).map(platform => ({
+            platform,
+            count: counts[platform] || 0,
+        }));
+    }, [posts]);
+
+    const aiActivityData: AiActivityData[] = useMemo(() => {
+        const counts = apiLogs.reduce((acc, log) => {
+            if (log.status === 'Success') {
+                acc[log.tool] = (acc[log.tool] || 0) + 1;
+            }
+            return acc;
+        }, {} as Record<string, number>);
+
+        const toolDetails: Record<string, { name: string, icon: React.ReactNode }> = {
+            'Caption': { name: 'Captions Generated', icon: <BotMessageSquare className="w-5 h-5 text-purple-400" /> },
+            'Caption Rewriter': { name: 'Captions Rewritten', icon: <PenSquare className="w-5 h-5 text-blue-400" /> },
+            'Trend Radar': { name: 'Trends Analyzed', icon: <TrendingUp className="w-5 h-5 text-green-400" /> },
+            'Proposal Generator': { name: 'Proposals Created', icon: <FileText className="w-5 h-5 text-yellow-400" /> },
+        };
+        
+        return Object.entries(toolDetails).map(([key, details]) => ({
+            tool: details.name,
+            count: counts[key] || 0,
+            icon: details.icon,
+        }));
+    }, [apiLogs]);
+
+    const totalAiUsage = aiActivityData.reduce((sum, item) => sum + item.count, 0);
+    const totalRevenue = monthlyGrowthData.reduce((sum, item) => sum + item.revenue, 0);
 
     return (
         <div className="space-y-8">
@@ -57,7 +97,7 @@ const AdminDashboardPage: React.FC = () => {
                 />
                 <StatCard 
                     title="Total Users" 
-                    value={MOCK_USERS.length.toString()} 
+                    value={users.length.toString()} 
                     icon={<Users size={24} />} 
                     color="bg-blue-500/20 text-blue-300" 
                 />
@@ -69,7 +109,7 @@ const AdminDashboardPage: React.FC = () => {
                 />
                 <StatCard 
                     title="AI Tools Usage" 
-                    value={`${(totalAiUsage / 1000).toFixed(1)}k`} 
+                    value={totalAiUsage.toLocaleString()} 
                     icon={<Sparkles size={24} />} 
                     color="bg-yellow-500/20 text-yellow-300" 
                 />
@@ -79,7 +119,7 @@ const AdminDashboardPage: React.FC = () => {
                 <div className="lg:col-span-2 bg-gray-800 p-6 rounded-lg h-96 flex flex-col">
                     <h2 className="text-xl font-semibold text-white mb-4">Monthly Growth (MRR)</h2>
                     <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={MOCK_MONTHLY_GROWTH_DATA} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                        <AreaChart data={monthlyGrowthData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                              <defs>
                                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="5%" stopColor="#4ade80" stopOpacity={0.8}/>
@@ -101,7 +141,7 @@ const AdminDashboardPage: React.FC = () => {
                 <div className="bg-gray-800 p-6 rounded-lg h-96 flex flex-col">
                     <h2 className="text-xl font-semibold text-white mb-4">AI Activity</h2>
                     <ul className="space-y-4 flex-1">
-                        {MOCK_AI_ACTIVITY_DATA.map(activity => (
+                        {aiActivityData.map(activity => (
                              <li key={activity.tool} className="flex items-center justify-between bg-gray-900/50 p-3 rounded-md">
                                  <div className="flex items-center gap-3">
                                     {activity.icon}
@@ -118,7 +158,7 @@ const AdminDashboardPage: React.FC = () => {
                 <div className="lg:col-span-2 bg-gray-800 p-6 rounded-lg h-96 flex flex-col">
                     <h2 className="text-xl font-semibold text-white mb-4">Posts by Platform</h2>
                     <ResponsiveContainer width="100%" height="100%">
-                         <BarChart data={MOCK_POSTS_BY_PLATFORM} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+                         <BarChart data={postsByPlatform} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="#475569" />
                             <XAxis dataKey="platform" stroke="#94a3b8" fontSize={12} />
                             <YAxis stroke="#94a3b8" fontSize={12} />
@@ -136,7 +176,7 @@ const AdminDashboardPage: React.FC = () => {
                     <h2 className="text-xl font-semibold text-white mb-4">Recent Activity</h2>
                     <div className="flex-1 overflow-y-auto pr-2">
                         <ul className="space-y-4">
-                            {MOCK_RECENT_ACTIVITY.map(activity => (
+                            {recentActivity.map(activity => (
                                  <li key={activity.id} className="flex items-center gap-4">
                                     <div className="bg-gray-900/50 p-2 rounded-full">
                                         <ActivityIcon type={activity.type} />

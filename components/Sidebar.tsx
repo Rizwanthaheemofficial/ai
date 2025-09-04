@@ -1,5 +1,5 @@
 
-import React, { useContext } from 'react';
+import React, { useContext, useMemo } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Rocket } from 'lucide-react';
 import { USER_NAV_LINKS, ADMIN_NAV_LINKS } from '../constants';
@@ -8,9 +8,21 @@ import { SettingsContext } from '../context/SettingsContext';
 
 const Sidebar: React.FC = () => {
     const { user } = useContext(AuthContext);
-    // FIX: The context provides 'systemSettings', not 'seoSettings'. Destructure the correct object.
     const { systemSettings } = useContext(SettingsContext);
-    const navLinks = user?.role === 'admin' ? ADMIN_NAV_LINKS : USER_NAV_LINKS;
+    
+    const userLinks = useMemo(() => {
+        return USER_NAV_LINKS.filter(link => {
+            if (link.href === '/pods' && !systemSettings.featureFlags?.engagementPods) {
+                return false;
+            }
+            if (link.href === '/marketplace' && !systemSettings.featureFlags?.marketplace) {
+                return false;
+            }
+            return true;
+        });
+    }, [systemSettings.featureFlags]);
+
+    const navLinks = user?.role === 'admin' ? ADMIN_NAV_LINKS : userLinks;
     const homeLink = user?.role === 'admin' ? '/admin/dashboard' : '/dashboard';
 
     return (

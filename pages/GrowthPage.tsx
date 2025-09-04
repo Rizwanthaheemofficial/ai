@@ -1,37 +1,29 @@
-import React, { useState } from 'react';
-// Fix: Import SocialProvider from `../types` as it's not exported from `../constants`.
-import { GROWTH_TOOLS_LIST, MOCK_ANALYTICS_DATA } from '../constants';
-import { SocialProvider } from '../types';
-import { LineChart, BarChart2, Users, Search, Lightbulb, Sparkles } from 'lucide-react';
+
+import React, { useState, useContext, useMemo } from 'react';
+import { MOCK_ANALYTICS_DATA } from '../constants';
+import { SocialProvider, Tool } from '../types';
+import { Sparkles, ArrowLeft } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
 import { fetchTrendRadar, buildAudiencePersona } from '../services/geminiService';
+import { useActivity } from '../context/ActivityContext';
+import { AuthContext } from '../App';
+import { SettingsContext } from '../context/SettingsContext';
 
-const GrowthToolCard: React.FC<{ tool: typeof GROWTH_TOOLS_LIST[0], onClick: () => void }> = ({ tool, onClick }) => {
-    const icons: { [key: string]: React.ReactNode } = {
-        'trend-radar': <LineChart />,
-        'persona-builder': <Users />,
-        'influencer-finder': <Search />,
-        'content-gap': <Lightbulb />,
-        'engagement-pods': <Users />,
-        'growth-forecasting': <BarChart2 />,
-    };
-
+const GrowthToolCard: React.FC<{ tool: Tool, onClick: () => void }> = ({ tool, onClick }) => {
     return (
         <div className="bg-gray-800 p-6 rounded-lg border border-gray-700">
             <div className="flex items-start justify-between">
                 <div className="bg-gray-900 p-3 rounded-lg text-brand-400">
-                   {icons[tool.id]}
+                   {tool.icon}
                 </div>
-                {!tool.isAvailable && <span className="text-xs bg-brand-900 text-brand-300 font-semibold px-2 py-1 rounded-full">Coming Soon</span>}
             </div>
             <h3 className="text-lg font-semibold text-white mt-4">{tool.name}</h3>
             <p className="text-sm text-gray-400 mt-1 h-12">{tool.description}</p>
             <button 
                 onClick={onClick}
-                disabled={!tool.isAvailable}
-                className="w-full mt-4 bg-gray-700 text-white py-2 rounded-md font-semibold hover:bg-gray-600 disabled:bg-gray-700/50 disabled:cursor-not-allowed"
+                className="w-full mt-4 bg-gray-700 text-white py-2 rounded-md font-semibold hover:bg-gray-600"
             >
-                {tool.isAvailable ? 'Use Tool' : 'Learn More'}
+                Use Tool
             </button>
         </div>
     );
@@ -43,9 +35,11 @@ const TrendRadar: React.FC = () => {
     const [result, setResult] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { addNotification } = useNotification();
+    const { addApiLog } = useActivity();
+    const { user } = useContext(AuthContext);
     
     const handleScan = async () => {
-        if (!niche) {
+        if (!niche || !user) {
             addNotification('Please enter a niche to scan for trends.', 'error');
             return;
         }
@@ -54,8 +48,10 @@ const TrendRadar: React.FC = () => {
         try {
             const output = await fetchTrendRadar(niche, platform);
             setResult(output);
+            addApiLog({ userEmail: user.email, tool: 'Trend Radar', status: 'Success' });
         } catch (error) {
             addNotification(`Failed to fetch trends: ${error instanceof Error ? error.message : "Unknown Error"}`, 'error');
+            addApiLog({ userEmail: user.email, tool: 'Trend Radar', status: 'Failed' });
         } finally {
             setIsLoading(false);
         }
@@ -90,8 +86,11 @@ const PersonaBuilder: React.FC = () => {
     const [result, setResult] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { addNotification } = useNotification();
+    const { addApiLog } = useActivity();
+    const { user } = useContext(AuthContext);
 
     const handleBuild = async () => {
+        if(!user) return;
         setIsLoading(true);
         setResult('');
         try {
@@ -99,8 +98,10 @@ const PersonaBuilder: React.FC = () => {
             const dataSummary = `Follower growth is steady, engagement is highest on posts about productivity tips. Audience seems to be most active on weekdays. Average likes per post: ${MOCK_ANALYTICS_DATA.reduce((a, b) => a + b.likes, 0) / MOCK_ANALYTICS_DATA.length}.`;
             const output = await buildAudiencePersona(dataSummary);
             setResult(output);
+            addApiLog({ userEmail: user.email, tool: 'Persona Builder', status: 'Success' });
         } catch (error) {
              addNotification(`Failed to build persona: ${error instanceof Error ? error.message : "Unknown Error"}`, 'error');
+             addApiLog({ userEmail: user.email, tool: 'Persona Builder', status: 'Failed' });
         } finally {
             setIsLoading(false);
         }
@@ -125,19 +126,44 @@ const PersonaBuilder: React.FC = () => {
 
 
 const GrowthPage: React.FC = () => {
-    const [activeTool, setActiveTool] = useState<string | null>(null);
+    const [activeToolId, setActiveToolId] = useState<string | null>(null);
+    const { tools } = useContext(SettingsContext);
+    const { user } = useContext(AuthContext);
+
+    const growthTools = useMemo(() => {
+        if (!user) return [];
+        return tools.filter(tool => 
+            tool.category === 'Growth & Strategy' && tool.availableOnPlans.includes(user.planId)
+        );
+    }, [tools, user]);
+    
+    const activeTool = tools.find(t => t.id === activeToolId);
 
      const renderActiveTool = () => {
-        switch (activeTool) {
+        switch (activeToolId) {
             case 'trend-radar':
                 return <TrendRadar />;
             case 'persona-builder':
                 return <PersonaBuilder />;
             default:
+                if (activeToolId && activeTool) { // A tool is selected but not implemented above
+                     return (
+                        <div className="text-center p-8 bg-gray-800 rounded-lg">
+                            <div className="bg-gray-900 p-4 rounded-lg inline-block text-brand-500 text-4xl">
+                               {activeTool.icon}
+                            </div>
+                            <h3 className="text-2xl font-bold text-white mt-4">{activeTool.name}</h3>
+                            <p className="text-gray-400 mt-2 mb-6 max-w-md mx-auto">{activeTool.description}</p>
+                            <span className="bg-brand-900 text-brand-300 font-semibold px-4 py-2 rounded-full">Coming Soon</span>
+                            <p className="text-xs text-gray-500 mt-4">This tool's functionality is under development.</p>
+                        </div>
+                    );
+                }
+                // Default view: list of available growth tools
                 return (
                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {GROWTH_TOOLS_LIST.map(tool => (
-                            <GrowthToolCard key={tool.id} tool={tool} onClick={() => setActiveTool(tool.id)} />
+                        {growthTools.map(tool => (
+                            <GrowthToolCard key={tool.id} tool={tool} onClick={() => setActiveToolId(tool.id)} />
                         ))}
                     </div>
                 );
@@ -147,9 +173,9 @@ const GrowthPage: React.FC = () => {
     return (
         <div className="space-y-8">
             <div className="flex items-center gap-4">
-                 {activeTool && <button onClick={() => setActiveTool(null)} className="font-semibold text-brand-400 hover:text-brand-300">&larr; Back to Growth Suite</button>}
+                 {activeToolId && <button onClick={() => setActiveToolId(null)} className="flex items-center gap-2 font-semibold text-brand-400 hover:text-brand-300"><ArrowLeft size={16} /> Back to Growth Suite</button>}
                 <h1 className="text-3xl font-bold text-white">
-                    {activeTool ? GROWTH_TOOLS_LIST.find(t => t.id === activeTool)?.name : 'AI Growth Suite'}
+                    {activeTool ? activeTool.name : 'AI Growth Suite'}
                 </h1>
             </div>
             <div>{renderActiveTool()}</div>

@@ -1,9 +1,9 @@
 import React, { useContext } from 'react';
-import { MOCK_PLANS } from '../constants';
 import { Check } from 'lucide-react';
 import { type Plan } from '../types';
 import { AuthContext } from '../App';
 import { useNavigate } from 'react-router-dom';
+import { SettingsContext } from '../context/SettingsContext';
 
 
 const PlanCard: React.FC<{ plan: Plan }> = ({ plan }) => {
@@ -48,6 +48,7 @@ const PlanCard: React.FC<{ plan: Plan }> = ({ plan }) => {
 
 
 const PricingPage: React.FC = () => {
+    const { plans } = useContext(SettingsContext);
     return (
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
@@ -60,7 +61,7 @@ const PricingPage: React.FC = () => {
             </div>
 
             <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-stretch">
-                {MOCK_PLANS.map(plan => (
+                {plans.map(plan => (
                     <div key={plan.id} className="relative">
                         <PlanCard plan={plan} />
                     </div>

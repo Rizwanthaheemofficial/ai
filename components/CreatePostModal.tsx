@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { X, Calendar, Image as ImageIcon, Paperclip, XCircle } from 'lucide-react';
+import { X, Calendar, Image as ImageIcon, Paperclip, XCircle, Film } from 'lucide-react';
 import { SocialProvider } from '../types';
 
 interface CreatePostModalProps {
@@ -56,14 +56,14 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onCr
         const file = e.target.files?.[0];
         if (file) {
             setMediaFile(file);
-            if (file.type.startsWith('image/')) {
+            if (file.type.startsWith('image/') || file.type.startsWith('video/')) {
                 const reader = new FileReader();
                 reader.onloadend = () => {
                     setMediaPreview(reader.result as string);
                 };
                 reader.readAsDataURL(file);
             } else {
-                setMediaPreview(null); // No preview for non-image files
+                setMediaPreview(null); // No preview for other file types
             }
         }
     };
@@ -108,24 +108,38 @@ const CreatePostModal: React.FC<CreatePostModalProps> = ({ isOpen, onClose, onCr
                                 className="w-full bg-gray-700 border border-gray-600 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-brand-500 focus:border-brand-500"
                                 placeholder="What's on your mind?"
                             ></textarea>
-                             {mediaPreview && (
-                                <div className="mt-4 relative w-40 h-40">
-                                    <img src={mediaPreview} alt="Media preview" className="rounded-lg object-cover w-full h-full" />
-                                    <button onClick={handleRemoveMedia} className="absolute -top-2 -right-2 bg-gray-900 rounded-full text-red-400 hover:text-red-300">
-                                        <XCircle size={24} />
-                                    </button>
-                                </div>
-                            )}
-                             {mediaFile && !mediaPreview && (
-                                <div className="mt-4 flex items-center gap-3 bg-gray-700 p-3 rounded-lg relative">
-                                    <Paperclip className="w-6 h-6 text-gray-400" />
-                                    <div className="text-sm">
-                                        <p className="font-medium text-white">{mediaFile.name}</p>
-                                        <p className="text-gray-400">{(mediaFile.size / 1024 / 1024).toFixed(2)} MB</p>
-                                    </div>
-                                    <button onClick={handleRemoveMedia} className="absolute top-1 right-1 text-red-400 hover:text-red-300">
-                                        <XCircle size={20} />
-                                    </button>
+                            {mediaFile && (
+                                <div className="mt-4">
+                                    {mediaFile.type.startsWith('image/') && mediaPreview ? (
+                                        <div className="relative w-full max-w-sm">
+                                            <img src={mediaPreview} alt="Media preview" className="rounded-lg object-contain w-full h-auto max-h-64 border border-gray-700" />
+                                            <button onClick={handleRemoveMedia} className="absolute -top-2 -right-2 bg-gray-900 rounded-full text-red-400 hover:text-red-300">
+                                                <XCircle size={24} />
+                                            </button>
+                                        </div>
+                                    ) : mediaFile.type.startsWith('video/') && mediaPreview ? (
+                                        <div className="relative w-full max-w-sm">
+                                            <video controls src={mediaPreview} className="rounded-lg object-contain w-full h-auto max-h-64 bg-black border border-gray-700" />
+                                            <button onClick={handleRemoveMedia} className="absolute -top-2 -right-2 bg-gray-900 rounded-full text-red-400 hover:text-red-300">
+                                                <XCircle size={24} />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <div className="flex items-center gap-3 bg-gray-700 p-3 rounded-lg relative max-w-sm">
+                                            {mediaFile.type.startsWith('video/') ? (
+                                                <Film className="w-6 h-6 text-gray-400 flex-shrink-0" />
+                                            ) : (
+                                                <Paperclip className="w-6 h-6 text-gray-400 flex-shrink-0" />
+                                            )}
+                                            <div className="text-sm overflow-hidden">
+                                                <p className="font-medium text-white truncate" title={mediaFile.name}>{mediaFile.name}</p>
+                                                <p className="text-gray-400">{(mediaFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                                            </div>
+                                            <button onClick={handleRemoveMedia} className="absolute top-1 right-1 text-red-400 hover:text-red-300">
+                                                <XCircle size={20} />
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>

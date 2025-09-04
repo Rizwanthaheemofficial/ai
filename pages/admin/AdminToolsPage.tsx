@@ -13,7 +13,7 @@ const ToolRow: React.FC<{ tool: Tool; onEdit: () => void; onDelete: () => void; 
     <tr className="border-b border-gray-800 hover:bg-gray-800/50">
         <td className="p-4">
             <div className="flex items-center gap-3">
-                <div className="text-brand-400">{tool.icon}</div>
+                <div className="text-brand-400 flex-shrink-0">{tool.icon}</div>
                 <div>
                     <p className="font-medium text-white">{tool.name}</p>
                     <p className="text-sm text-gray-400 max-w-md truncate">{tool.description}</p>

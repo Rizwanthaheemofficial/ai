@@ -9,14 +9,98 @@ const MainLayout: React.FC = () => {
     const { systemSettings } = React.useContext(SettingsContext);
     const { seo } = systemSettings;
 
+    // SEO and Branding Effect
     React.useEffect(() => {
+        // Update title
         document.title = seo.title || 'Orbit';
-        const metaDesc = document.querySelector('meta[name="description"]');
-        if (metaDesc) {
-            metaDesc.setAttribute('content', seo.description || 'AI Social Growth Platform');
+
+        // Helper to update or create meta tags
+        const setMetaTag = (attr: string, name: string, content: string) => {
+            if (!content) return;
+            let element = document.querySelector(`meta[${attr}='${name}']`) as HTMLMetaElement;
+            if (!element) {
+                element = document.createElement('meta');
+                element.setAttribute(attr, name);
+                document.head.appendChild(element);
+            }
+            element.setAttribute('content', content);
+        };
+
+        // Standard meta tags
+        setMetaTag('name', 'description', seo.description);
+        setMetaTag('name', 'keywords', seo.keywords);
+
+        // Open Graph tags for social sharing
+        setMetaTag('property', 'og:title', seo.title);
+        setMetaTag('property', 'og:description', seo.description);
+        setMetaTag('property', 'og:image', seo.ogImageUrl);
+        setMetaTag('property', 'og:type', 'website');
+
+        // Twitter card tags
+        setMetaTag('name', 'twitter:card', 'summary_large_image');
+        setMetaTag('name', 'twitter:site', seo.twitterHandle);
+        setMetaTag('name', 'twitter:title', seo.title);
+        setMetaTag('name', 'twitter:description', seo.description);
+        setMetaTag('name', 'twitter:image', seo.ogImageUrl);
+
+        // Update favicon
+        let favicon = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+        if (!favicon) {
+            favicon = document.createElement('link');
+            favicon.rel = 'icon';
+            document.head.appendChild(favicon);
         }
+        favicon.href = seo.faviconUrl || '/vite.svg'; // Default fallback
+
     }, [seo]);
     
+    // Google Analytics Effect
+    React.useEffect(() => {
+        const gaId = seo.googleAnalyticsId;
+        const scriptId = 'ga-tracking-script';
+        const inlineScriptId = 'ga-inline-script';
+
+        // Cleanup function to remove scripts
+        const removeScripts = () => {
+            const gtagScript = document.getElementById(scriptId);
+            const inlineScript = document.getElementById(inlineScriptId);
+            if (gtagScript) gtagScript.remove();
+            if (inlineScript) inlineScript.remove();
+        };
+
+        if (!gaId) {
+            removeScripts();
+            return;
+        }
+
+        // Avoid re-adding the script if it already exists for the same ID
+        if (document.getElementById(scriptId)?.dataset.gaId === gaId) {
+            return;
+        }
+        
+        // If script exists but ID is different, remove old ones
+        removeScripts();
+
+        const gtagScript = document.createElement('script');
+        gtagScript.id = scriptId;
+        gtagScript.async = true;
+        gtagScript.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+        gtagScript.dataset.gaId = gaId; // Store ID for checking
+        document.head.appendChild(gtagScript);
+
+        const inlineScript = document.createElement('script');
+        inlineScript.id = inlineScriptId;
+        inlineScript.innerHTML = `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${gaId}');
+        `;
+        document.head.appendChild(inlineScript);
+        
+        return removeScripts; // Cleanup on component unmount or when gaId changes
+    }, [seo.googleAnalyticsId]);
+
     // Effect to update the theme color
     React.useEffect(() => {
         const root = document.documentElement;

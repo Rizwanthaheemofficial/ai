@@ -1,7 +1,7 @@
 import React, { createContext, ReactNode, useMemo } from 'react';
 import useLocalStorage from '../hooks/useLocalStorage';
-import { Tool, SystemSettings } from '../types';
-import { TOOL_ICONS } from '../constants';
+import { Tool, SystemSettings, Plan } from '../types';
+import { TOOL_ICONS, MOCK_PLANS } from '../constants';
 import { Sparkles } from 'lucide-react';
 
 // Define the shape of a tool object that is safe to store in localStorage
@@ -14,12 +14,14 @@ interface SettingsContextType {
     addTool: (tool: Omit<StoredTool, 'id'>) => void;
     updateTool: (tool: StoredTool) => void;
     deleteTool: (toolId: string) => void;
+    plans: Plan[];
+    setPlans: React.Dispatch<React.SetStateAction<Plan[]>>;
 }
 
 export const SettingsContext = createContext<SettingsContextType>({
     tools: [],
     systemSettings: {
-        seo: { title: 'Orbit', description: '', logoUrl: '', brandColor: '#4291ff', customDomain: '' },
+        seo: { title: 'Orbit', description: '', logoUrl: '', brandColor: '#4291ff', customDomain: '', keywords: '', faviconUrl: '', ogImageUrl: '', twitterHandle: '', sitemapUrl: '', googleAnalyticsId: '' },
         apiKeys: { gemini: '' },
         paymentGateways: {
             stripe: { isEnabled: true, publicKey: '', secretKey: ''},
@@ -29,11 +31,14 @@ export const SettingsContext = createContext<SettingsContextType>({
             custom: { isEnabled: false, name: '', instructions: '' },
         },
         maintenanceMode: false,
+        featureFlags: { engagementPods: true, marketplace: true },
     },
     setSystemSettings: () => {},
     addTool: () => {},
     updateTool: () => {},
     deleteTool: () => {},
+    plans: [],
+    setPlans: () => {},
 });
 
 const initialStoredTools: StoredTool[] = [
@@ -46,6 +51,12 @@ const initialStoredTools: StoredTool[] = [
     { name: 'Ad Creative Optimizer', description: 'AI suggests better titles, CTAs, and thumbnails for your ads.', id: 'ad-optimizer', iconName: 'ad-optimizer', category: 'Optimization', availableOnPlans: ['agency'] },
     { name: 'AI Proposal Generator', description: 'For agencies managing clients, auto-create proposals & invoices.', id: 'proposal-generator', iconName: 'proposal-generator', category: 'Business & Agency', availableOnPlans: ['agency'] },
     { name: 'AI Meme Generator', description: 'Generates memes using current trending templates to boost engagement.', id: 'meme-generator', iconName: 'meme-generator', category: 'Engagement', availableOnPlans: ['creator', 'business', 'agency'] },
+    { name: 'AI Trend Radar', description: 'Scans TikTok, X, & Instagram for trending sounds, hashtags, and formats.', id: 'trend-radar', iconName: 'trend-radar', category: 'Growth & Strategy', availableOnPlans: ['business', 'agency'] },
+    { name: 'Audience Persona Builder', description: 'AI builds a profile of your ideal followers from your analytics.', id: 'persona-builder', iconName: 'persona-builder', category: 'Growth & Strategy', availableOnPlans: ['business', 'agency'] },
+    { name: 'AI Best Influencer Finder', description: 'AI analyzes your niche and suggests influencers to collaborate with.', id: 'influencer-finder', iconName: 'influencer-finder', category: 'Growth & Strategy', availableOnPlans: [] },
+    { name: 'Content Gap Analyzer', description: 'Compares competitors vs your account and shows what topics you are missing.', id: 'content-gap-analyzer', iconName: 'content-gap-analyzer', category: 'Growth & Strategy', availableOnPlans: ['agency'] },
+    { name: 'Smart Engagement Pods', description: 'Auto-exchanges likes/comments between real people to boost reach.', id: 'engagement-pods', iconName: 'engagement-pods', category: 'Growth & Strategy', availableOnPlans: [] },
+    { name: 'Growth Forecasting', description: 'Predicts how fast you will grow if you keep your current posting pace.', id: 'growth-forecasting', iconName: 'growth-forecasting', category: 'Growth & Strategy', availableOnPlans: [] },
 ];
 
 
@@ -56,6 +67,12 @@ const initialSystemSettings: SystemSettings = {
         logoUrl: '',
         brandColor: '#4291ff', // Default brand color
         customDomain: '',
+        keywords: '',
+        faviconUrl: '',
+        ogImageUrl: '',
+        twitterHandle: '',
+        sitemapUrl: '',
+        googleAnalyticsId: '',
     },
     apiKeys: {
         gemini: '',
@@ -68,12 +85,17 @@ const initialSystemSettings: SystemSettings = {
         custom: { isEnabled: false, name: 'Bank Transfer', instructions: 'Please transfer the total amount to the following account...' },
     },
     maintenanceMode: false,
+    featureFlags: {
+        engagementPods: true,
+        marketplace: true,
+    },
 };
 
 
 export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     const [storedTools, setStoredTools] = useLocalStorage<StoredTool[]>('orbit_tools', initialStoredTools);
     const [systemSettings, setSystemSettings] = useLocalStorage<SystemSettings>('orbit_system_settings', initialSystemSettings);
+    const [plans, setPlans] = useLocalStorage<Plan[]>('orbit_plans', MOCK_PLANS);
 
     // Memoize the conversion from stored data to renderable data with React components
     const tools = useMemo(() => {
@@ -103,7 +125,7 @@ export const SettingsProvider: React.FC<{ children: ReactNode }> = ({ children }
     };
 
     return (
-        <SettingsContext.Provider value={{ tools, systemSettings, setSystemSettings, addTool, updateTool, deleteTool }}>
+        <SettingsContext.Provider value={{ tools, systemSettings, setSystemSettings, addTool, updateTool, deleteTool, plans, setPlans }}>
             {children}
         </SettingsContext.Provider>
     );

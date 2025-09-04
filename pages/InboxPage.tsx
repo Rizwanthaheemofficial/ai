@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { MOCK_MESSAGES, SOCIAL_ICONS } from '../constants';
 import { type Message, SocialProvider } from '../types';
 import { Search, Inbox, Sparkles, Send } from 'lucide-react';
 import { generateSmartReply } from '../services/geminiService';
 import { useNotification } from '../context/NotificationContext';
+import useLocalStorage from '../hooks/useLocalStorage';
 
 const MessageItem: React.FC<{ message: Message, isSelected: boolean, onSelect: () => void }> = ({ message, isSelected, onSelect }) => {
     const Icon = SOCIAL_ICONS[message.platform];
@@ -27,8 +29,8 @@ const MessageItem: React.FC<{ message: Message, isSelected: boolean, onSelect: (
 };
 
 const InboxPage: React.FC = () => {
-    const [messages, setMessages] = useState<Message[]>(MOCK_MESSAGES);
-    const [selectedMessage, setSelectedMessage] = useState<Message | null>(messages[0]);
+    const [messages, setMessages] = useLocalStorage<Message[]>('orbit_messages', MOCK_MESSAGES);
+    const [selectedMessage, setSelectedMessage] = useState<Message | null>(messages.find(m => !m.isRead) || messages[0] || null);
     const [replySuggestions, setReplySuggestions] = useState<string[]>([]);
     const [isGenerating, setIsGenerating] = useState(false);
     const { addNotification } = useNotification();
@@ -68,7 +70,7 @@ const InboxPage: React.FC = () => {
                     </div>
                 </div>
                 <div className="flex-1 overflow-y-auto">
-                    {messages.map(msg => (
+                    {messages.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map(msg => (
                         <MessageItem 
                             key={msg.id} 
                             message={msg} 

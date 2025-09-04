@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { MOCK_PLANS } from '../../constants';
+import React, { useState, useContext } from 'react';
 import { type Plan } from '../../types';
 import { Check, PlusCircle, Trash2, ExternalLink } from 'lucide-react';
 import PlanEditModal from '../../components/admin/PlanEditModal';
 import { useNotification } from '../../context/NotificationContext';
+import { SettingsContext } from '../../context/SettingsContext';
 
 const PlanCard: React.FC<{ plan: Plan, onEdit: (plan: Plan) => void, onDelete: (planId: string) => void }> = ({ plan, onEdit, onDelete }) => {
     return (
@@ -42,7 +42,7 @@ const PlanCard: React.FC<{ plan: Plan, onEdit: (plan: Plan) => void, onDelete: (
 
 
 const AdminPlansPage: React.FC = () => {
-    const [plans, setPlans] = useState<Plan[]>(MOCK_PLANS);
+    const { plans, setPlans } = useContext(SettingsContext);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingPlan, setEditingPlan] = useState<Plan | null>(null);
     const { addNotification } = useNotification();
@@ -60,11 +60,11 @@ const AdminPlansPage: React.FC = () => {
     const handleSavePlan = (planToSave: Plan) => {
         if (editingPlan) {
             // Update existing plan
-            setPlans(plans.map(p => p.id === planToSave.id ? planToSave : p));
+            setPlans(currentPlans => currentPlans.map(p => p.id === planToSave.id ? planToSave : p));
             addNotification(`Plan "${planToSave.name}" updated successfully.`, 'success');
         } else {
             // Add new plan
-            setPlans([...plans, { ...planToSave, id: `new_${Date.now()}` }]);
+            setPlans(currentPlans => [...currentPlans, { ...planToSave, id: `new_${Date.now()}` }]);
             addNotification(`Plan "${planToSave.name}" created successfully.`, 'success');
         }
         handleCloseModal();
@@ -74,7 +74,7 @@ const AdminPlansPage: React.FC = () => {
         const planToDelete = plans.find(p => p.id === planId);
         if (planToDelete && window.confirm(`Are you sure you want to delete the "${planToDelete.name}" plan? This action cannot be undone.`)) {
             // NOTE: In a real app, you would check for active subscriptions before deleting.
-            setPlans(plans.filter(p => p.id !== planId));
+            setPlans(currentPlans => currentPlans.filter(p => p.id !== planId));
             addNotification(`Plan "${planToDelete.name}" has been deleted.`, 'info');
         }
     };

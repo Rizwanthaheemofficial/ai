@@ -1,5 +1,6 @@
 
-import React, { useState } from 'react';
+
+import React, { useState, useContext } from 'react';
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import DashboardPage from './pages/DashboardPage';
@@ -15,6 +16,7 @@ import InboxPage from './pages/InboxPage';
 import GrowthPage from './pages/GrowthPage';
 import MarketplacePage from './pages/MarketplacePage';
 import EngagementPodsPage from './pages/EngagementPodsPage'; // Import the new Pods page
+import TeamPage from './pages/TeamPage'; // Import the new Team page
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import AdminUsersPage from './pages/admin/AdminUsersPage';
 import AdminPlansPage from './pages/admin/AdminPlansPage';
@@ -24,12 +26,16 @@ import AdminApiUsagePage from './pages/admin/AdminApiUsagePage';
 import AdminSettingsPage from './pages/admin/AdminSettingsPage';
 import AdminAiControlPage from './pages/admin/AdminAiControlPage'; // Import the new AI Control page
 import AdminSupportPage from './pages/admin/AdminSupportPage'; // Import the new Support page
+import AdminToolsPage from './pages/admin/AdminToolsPage';
 import { NotificationProvider } from './context/NotificationContext';
 import NotificationContainer from './components/NotificationContainer';
 import { PostProvider } from './context/PostContext'; // Import the new PostProvider
-import { SettingsProvider } from './context/SettingsContext';
+import { SettingsContext, SettingsProvider } from './context/SettingsContext';
 import useLocalStorage from './hooks/useLocalStorage';
 import { User } from './types';
+import { AccountProvider } from './context/AccountContext';
+import { ActivityProvider } from './context/ActivityContext';
+import { Wrench } from 'lucide-react';
 
 // Define a clear interface for the AuthContext value
 interface AuthContextType {
@@ -45,11 +51,32 @@ export const AuthContext = React.createContext<AuthContextType>({
     logout: () => {},
 });
 
+const MaintenanceComponent = () => (
+    <div className="min-h-screen bg-gray-950 flex flex-col justify-center items-center text-center p-4">
+        <Wrench size={64} className="text-brand-500 mb-4 animate-pulse" />
+        <h1 className="text-4xl font-bold text-white mb-2">Under Maintenance</h1>
+        <p className="text-gray-400 max-w-md">
+            We're currently performing some scheduled maintenance. We should be back online shortly. Thanks for your patience!
+        </p>
+    </div>
+);
+
 // A wrapper component to protect user routes
 const PrivateWrapper = () => {
     const { user } = React.useContext(AuthContext);
-    return user ? <MainLayout /> : <Navigate to="/login" replace />;
+    const { systemSettings } = useContext(SettingsContext);
+
+    if (!user) {
+        return <Navigate to="/login" replace />;
+    }
+
+    if (systemSettings.maintenanceMode && user.role !== 'admin') {
+        return <MaintenanceComponent />; 
+    }
+
+    return <MainLayout />;
 };
+
 
 // A wrapper component to protect admin routes
 const AdminWrapper = () => {
@@ -79,6 +106,7 @@ function AppRoutes() {
                 <Route path="/growth" element={<GrowthPage />} />
                 <Route path="/tools" element={<ToolsPage />} />
                 <Route path="/marketplace" element={<MarketplacePage />} />
+                <Route path="/team" element={<TeamPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/pricing" element={<PricingPage />} />
             </Route>
@@ -94,6 +122,7 @@ function AppRoutes() {
                  <Route path="/admin/ai-control" element={<AdminAiControlPage />} />
                  <Route path="/admin/support" element={<AdminSupportPage />} />
                  <Route path="/admin/settings" element={<AdminSettingsPage />} />
+                 <Route path="/admin/tools" element={<AdminToolsPage />} />
             </Route>
 
             {/* Fallback route */}
@@ -119,12 +148,16 @@ function App() {
         <AuthContext.Provider value={authContextValue}>
             <NotificationProvider>
                 <SettingsProvider>
-                    <PostProvider>
-                        <HashRouter>
-                            <AppRoutes />
-                        </HashRouter>
-                        <NotificationContainer />
-                    </PostProvider>
+                    <AccountProvider>
+                        <ActivityProvider>
+                            <PostProvider>
+                                <HashRouter>
+                                    <AppRoutes />
+                                </HashRouter>
+                                <NotificationContainer />
+                            </PostProvider>
+                        </ActivityProvider>
+                    </AccountProvider>
                 </SettingsProvider>
             </NotificationProvider>
         </AuthContext.Provider>

@@ -1,5 +1,4 @@
-
-import React, { useState, useContext, useRef, useEffect } from 'react';
+import React, { useState, useContext, useRef, useEffect, useMemo } from 'react';
 import { Bell, PlusCircle, Settings, LogOut } from 'lucide-react';
 import CreatePostModal from './CreatePostModal';
 import { AuthContext } from '../App';
@@ -7,14 +6,22 @@ import { Link } from 'react-router-dom';
 import { useNotification } from '../context/NotificationContext';
 import { PostContext } from '../context/PostContext';
 import { SocialProvider } from '../types';
+import { SettingsContext } from '../context/SettingsContext';
 
 const Header: React.FC = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const { user, logout } = useContext(AuthContext);
     const { addPost } = useContext(PostContext);
+    const { plans } = useContext(SettingsContext);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const { addNotification } = useNotification();
+
+    const userPlanName = useMemo(() => {
+        if (!user || !plans) return 'User';
+        const plan = plans.find(p => p.id === user.planId);
+        return plan ? plan.name : 'User';
+    }, [user, plans]);
 
 
     const handleCreatePost = (content: string, platform: string, scheduledAt: Date | null, mediaFile: File | null) => {
@@ -73,7 +80,7 @@ const Header: React.FC = () => {
                         />
                         <div>
                             <p className="text-sm font-medium text-white text-left">{user.name}</p>
-                            <p className="text-xs text-gray-400 capitalize">{user.role === 'user' ? 'Pro Plan' : 'Administrator'}</p>
+                            <p className="text-xs text-gray-400 capitalize">{user.role === 'admin' ? 'Administrator' : `${userPlanName} Plan`}</p>
                         </div>
                     </button>
                     {isDropdownOpen && (

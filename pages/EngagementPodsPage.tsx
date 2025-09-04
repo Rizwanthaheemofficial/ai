@@ -1,8 +1,12 @@
-import React, { useState, useMemo } from 'react';
+
+import React, { useState, useMemo, useContext } from 'react';
+import { Navigate } from 'react-router-dom';
 import { MOCK_PODS, MOCK_POD_MEMBERS, MOCK_POD_POSTS, SOCIAL_ICONS } from '../constants';
 import { type Pod, PodMember, PodPost } from '../types';
 import { Users, Search, PlusCircle, ArrowLeft, ThumbsUp, MessageSquare, Award, Star } from 'lucide-react';
 import { useNotification } from '../context/NotificationContext';
+import useLocalStorage from '../hooks/useLocalStorage';
+import { SettingsContext } from '../context/SettingsContext';
 
 // --- Reusable Components ---
 
@@ -68,12 +72,12 @@ const CreatePodModal: React.FC<{ isOpen: boolean, onClose: () => void, onCreate:
 
 const PodDetailView: React.FC<{ pod: Pod, onBack: () => void }> = ({ pod, onBack }) => {
     const { addNotification } = useNotification();
-    const [members, setMembers] = useState<PodMember[]>(MOCK_POD_MEMBERS);
-    const [posts, setPosts] = useState<PodPost[]>(MOCK_POD_POSTS);
+    const [members, setMembers] = useLocalStorage<PodMember[]>(`orbit_pod_${pod.id}_members`, MOCK_POD_MEMBERS);
+    const [posts, setPosts] = useLocalStorage<PodPost[]>(`orbit_pod_${pod.id}_posts`, MOCK_POD_POSTS);
 
     const handleEngage = (postId: string, type: 'like' | 'comment') => {
         // Simulate engagement
-        setPosts(posts.filter(p => p.id !== postId));
+        setPosts(currentPosts => currentPosts.filter(p => p.id !== postId));
         
         // Add points to the current user (mocked as the first user)
         setMembers(prevMembers => prevMembers.map((m, i) => i === 0 ? {...m, contributionScore: m.contributionScore + (type === 'like' ? 1 : 3)} : m));
@@ -158,11 +162,16 @@ const PodDetailView: React.FC<{ pod: Pod, onBack: () => void }> = ({ pod, onBack
 // --- Main Page Component ---
 
 const EngagementPodsPage: React.FC = () => {
-    const [pods, setPods] = useState<Pod[]>(MOCK_PODS);
-    const [myPods, setMyPods] = useState<string[]>(['1']); // User has joined pod with id '1'
+    const { systemSettings } = useContext(SettingsContext);
+    const [pods, setPods] = useLocalStorage<Pod[]>('orbit_pods', MOCK_PODS);
+    const [myPods, setMyPods] = useLocalStorage<string[]>('orbit_my_pods', ['1']); // User has joined pod with id '1'
     const [selectedPod, setSelectedPod] = useState<Pod | null>(null);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const { addNotification } = useNotification();
+
+    if (!systemSettings.featureFlags?.engagementPods) {
+        return <Navigate to="/dashboard" replace />;
+    }
     
     const discoverPods = useMemo(() => pods.filter(p => !myPods.includes(p.id)), [pods, myPods]);
     const joinedPods = useMemo(() => pods.filter(p => myPods.includes(p.id)), [pods, myPods]);

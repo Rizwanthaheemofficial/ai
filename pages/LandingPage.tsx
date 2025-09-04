@@ -1,8 +1,7 @@
-
 import React, { useContext } from 'react';
 import { Link } from 'react-router-dom';
 import { Rocket, Check } from 'lucide-react';
-import { MOCK_PLANS, LANDING_FEATURES } from '../constants';
+import { LANDING_FEATURES } from '../constants';
 import { type Plan } from '../types';
 import { SettingsContext } from '../context/SettingsContext';
 
@@ -31,8 +30,7 @@ const PlanCard: React.FC<{ plan: Plan }> = ({ plan }) => (
 
 
 const LandingPage: React.FC = () => {
-    // FIX: The context provides 'systemSettings', not 'seoSettings'. Destructure the correct object.
-    const { systemSettings } = useContext(SettingsContext);
+    const { systemSettings, plans } = useContext(SettingsContext);
 
     return (
         <div className="bg-gray-950 text-gray-200">
@@ -107,7 +105,7 @@ const LandingPage: React.FC = () => {
                         </p>
                     </div>
                     <div className="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 items-stretch">
-                        {MOCK_PLANS.map(plan => (
+                        {plans.map(plan => (
                              <div key={plan.id} className="relative">
                                 <PlanCard plan={plan} />
                             </div>

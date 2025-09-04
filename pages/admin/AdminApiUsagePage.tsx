@@ -1,6 +1,7 @@
+
 import React from 'react';
-import { MOCK_API_LOGS } from '../../constants';
 import { type ApiLog } from '../../types';
+import { useActivity } from '../../context/ActivityContext';
 
 const LogRow: React.FC<{ log: ApiLog }> = ({ log }) => {
     const statusColor = log.status === 'Success' ? 'text-green-400' : 'text-red-400';
@@ -15,6 +16,7 @@ const LogRow: React.FC<{ log: ApiLog }> = ({ log }) => {
 };
 
 const AdminApiUsagePage: React.FC = () => {
+    const { apiLogs } = useActivity();
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold text-white">API Usage & Logs</h1>
@@ -30,7 +32,7 @@ const AdminApiUsagePage: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {MOCK_API_LOGS.map(log => (
+                        {apiLogs.map(log => (
                             <LogRow key={log.id} log={log} />
                         ))}
                     </tbody>

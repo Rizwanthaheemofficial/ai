@@ -1,27 +1,34 @@
 
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Rocket } from 'lucide-react';
 import { AuthContext } from '../App';
 import { type User } from '../types';
+import { useActivity } from '../context/ActivityContext';
 
 const SignUpPage: React.FC = () => {
     const { login } = useContext(AuthContext);
     const navigate = useNavigate();
+    const { addActivity } = useActivity();
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
 
     const handleSignUp = (e: React.FormEvent) => {
         e.preventDefault();
         // Simulate creating an account and logging in.
-        // Fix: The login function requires a User object. A mock user is created for this prototype.
         const mockNewUser: User = {
-            id: 99,
-            name: 'New User',
-            email: 'newuser@example.com',
+            id: Date.now(),
+            name,
+            email,
             role: 'user',
-            // FIX: Added missing 'planId' property required by the User type.
             planId: 'free',
         };
         login(mockNewUser);
+        addActivity({
+            type: 'signup',
+            description: `${email} just signed up.`
+        });
         navigate('/dashboard');
     };
 
@@ -43,6 +50,8 @@ const SignUpPage: React.FC = () => {
                             <input
                                 type="text"
                                 id="name"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
                                 required
                                 className="w-full bg-gray-800 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-brand-500 focus:border-brand-500"
                             />
@@ -52,6 +61,8 @@ const SignUpPage: React.FC = () => {
                             <input
                                 type="email"
                                 id="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 required
                                 className="w-full bg-gray-800 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-brand-500 focus:border-brand-500"
                             />
@@ -61,6 +72,8 @@ const SignUpPage: React.FC = () => {
                             <input
                                 type="password"
                                 id="password"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
                                 required
                                 className="w-full bg-gray-800 border border-gray-700 rounded-md shadow-sm py-2 px-3 text-white focus:outline-none focus:ring-brand-500 focus:border-brand-500"
                             />

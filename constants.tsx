@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { SocialProvider, PostStatus, type User, type SocialAccount, type Post, type Plan, type AnalyticsData, type Message, type SentimentData, type MarketplaceItem, type ApiLog, type PostCount, type ActivityItem, MonthlyGrowthData, AiActivityData, Pod, PodMember, PodPost, AiTokenUsage, SupportTicket } from './types';
-import { LayoutDashboard, CalendarClock, BarChart3, Wrench, Settings, Rocket, BotMessageSquare, Share2, Palette, TrendingUp, Lightbulb, Users, Package, FileText, Inbox, LineChart, Store, Link2, Terminal, Sparkles, PenSquare, LifeBuoy } from 'lucide-react';
+import { LayoutDashboard, CalendarClock, BarChart3, Wrench, Settings, Rocket, BotMessageSquare, Share2, Palette, TrendingUp, Lightbulb, Users, Package, FileText, Inbox, LineChart, Store, Link2, Terminal, Sparkles, PenSquare, LifeBuoy, Search, BarChart2 } from 'lucide-react';
 import { LucideIcon } from 'lucide-react';
 
 export const USER_NAV_LINKS = [
@@ -13,6 +13,7 @@ export const USER_NAV_LINKS = [
     { name: 'Growth', href: '/growth', icon: <LineChart size={20} /> },
     { name: 'Tools', href: '/tools', icon: <Wrench size={20} /> },
     { name: 'Marketplace', href: '/marketplace', icon: <Store size={20} /> },
+    { name: 'Team', href: '/team', icon: <Users size={20} /> },
     { name: 'Settings', href: '/settings', icon: <Settings size={20} /> },
 ];
 
@@ -128,15 +129,6 @@ export const MOCK_MESSAGES: Message[] = [
     { id: '3', platform: SocialProvider.Twitter, sender: { name: 'TechGuru', avatar: 'https://picsum.photos/seed/msg3/40/40' }, content: 'Great insight! Thanks for sharing.', timestamp: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(), isRead: true },
     { id: '4', platform: SocialProvider.LinkedIn, sender: { name: 'Sarah Connell', avatar: 'https://picsum.photos/seed/msg4/40/40' }, content: 'Interesting article. I have a follow-up question regarding the Q3 data...', timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), isRead: false, priority: true },
     { id: '5', platform: SocialProvider.Instagram, sender: { name: 'wanderlust_gal', avatar: 'https://picsum.photos/seed/msg5/40/40' }, content: '❤️', timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), isRead: true },
-];
-
-export const GROWTH_TOOLS_LIST = [
-    { name: 'AI Trend Radar', description: 'Scans TikTok, X, & Instagram for trending sounds, hashtags, and formats.', id: 'trend-radar', isAvailable: true },
-    { name: 'Audience Persona Builder', description: 'AI builds a profile of your ideal followers from your analytics.', id: 'persona-builder', isAvailable: true },
-    { name: 'AI Best Influencer Finder', description: 'AI analyzes your niche and suggests influencers to collaborate with.', id: 'influencer-finder', isAvailable: false },
-    { name: 'Content Gap Analyzer', description: 'Compares competitors vs your account and shows what topics you are missing.', id: 'content-gap', isAvailable: false },
-    { name: 'Smart Engagement Pods', description: 'Auto-exchanges likes/comments between real people to boost reach.', id: 'engagement-pods', isAvailable: false },
-    { name: 'Growth Forecasting', description: 'Predicts how fast you will grow if you keep your current posting pace.', id: 'growth-forecasting', isAvailable: false },
 ];
 
 export const MOCK_MARKETPLACE_ITEMS: MarketplaceItem[] = [
@@ -261,14 +253,20 @@ export const MOCK_SUPPORT_TICKETS: SupportTicket[] = [
 
 // A map to associate tool IDs with their icon components for dynamic rendering
 export const TOOL_ICONS: Record<string, LucideIcon> = {
+    'ad-optimizer': Rocket,
     'caption-generator': BotMessageSquare,
-    'hashtag-generator': Sparkles, // Using Sparkles as a placeholder for #
-    'content-idea-generator': Lightbulb,
     'caption-rewriter': Palette,
-    'voice-to-post': Wrench, // Placeholder
-    'seo-analyzer': TrendingUp,
+    'content-gap-analyzer': Lightbulb,
+    'content-idea-generator': Lightbulb,
+    'engagement-pods': Share2,
+    'growth-forecasting': BarChart2,
+    'hashtag-generator': Sparkles,
+    'influencer-finder': Search,
     'meme-generator': TrendingUp,
-    'one-click-export': Share2, // Placeholder
-    'ad-optimizer': Rocket, // Placeholder
+    'one-click-export': Share2,
+    'persona-builder': Users,
     'proposal-generator': FileText,
+    'seo-analyzer': TrendingUp,
+    'trend-radar': LineChart,
+    'voice-to-post': Wrench,
 };

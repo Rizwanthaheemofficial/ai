@@ -5,6 +5,7 @@ import { SupportTicket } from '../../types';
 import { Inbox, ArrowLeft, Sparkles, Send } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
 import { generateSupportReply } from '../../services/geminiService';
+import useLocalStorage from '../../hooks/useLocalStorage';
 
 const TicketItem: React.FC<{ ticket: SupportTicket, onSelect: () => void }> = ({ ticket, onSelect }) => {
     const statusColor = {
@@ -27,7 +28,7 @@ const TicketItem: React.FC<{ ticket: SupportTicket, onSelect: () => void }> = ({
 };
 
 const AdminSupportPage: React.FC = () => {
-    const [tickets, setTickets] = useState<SupportTicket[]>(MOCK_SUPPORT_TICKETS);
+    const [tickets, setTickets] = useLocalStorage<SupportTicket[]>('orbit_support_tickets', MOCK_SUPPORT_TICKETS);
     const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
     const [replyText, setReplyText] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);

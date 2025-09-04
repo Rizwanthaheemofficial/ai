@@ -6,11 +6,12 @@ import { Sparkles, Clipboard, TrendingUp, ArrowLeft, PenSquare, FileText, BotMes
 import { useNotification } from '../context/NotificationContext';
 import { SettingsContext } from '../context/SettingsContext';
 import { AuthContext } from '../App';
+import { useActivity } from '../context/ActivityContext';
 
 const ToolCard: React.FC<{ tool: Tool, onClick: () => void }> = ({ tool, onClick }) => (
     <button onClick={onClick} className="bg-gray-800 p-6 rounded-lg text-left w-full hover:bg-gray-700/50 border border-transparent hover:border-brand-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-transparent">
         <div className="flex items-start gap-4">
-            <div className="bg-gray-900 p-3 rounded-lg flex-shrink-0">
+            <div className="bg-gray-900 p-3 rounded-lg flex-shrink-0 flex items-center justify-center">
                {tool.icon}
             </div>
             <div>
@@ -27,24 +28,29 @@ const AIGenerator: React.FC<{
     showTone?: boolean;
     buttonText: string;
     showPlatform?: boolean;
-}> = ({ inputPlaceholder, generateFunction, showTone = false, buttonText, showPlatform = true }) => {
+    toolName: string;
+}> = ({ inputPlaceholder, generateFunction, showTone = false, buttonText, showPlatform = true, toolName }) => {
     const [prompt, setPrompt] = useState('');
     const [tone, setTone] = useState('Friendly');
     const [platform, setPlatform] = useState(SocialProvider.Instagram);
     const [result, setResult] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { addNotification } = useNotification();
+    const { addApiLog } = useActivity();
+    const { user } = useContext(AuthContext);
 
     const handleGenerate = async () => {
-        if (!prompt) return;
+        if (!prompt || !user) return;
         setIsLoading(true);
         setResult('');
         try {
             const output = await generateFunction(prompt, platform, tone);
             setResult(output);
+            addApiLog({ userEmail: user.email, tool: toolName, status: 'Success' });
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
             addNotification(`Error generating content: ${errorMessage}`, 'error');
+            addApiLog({ userEmail: user.email, tool: toolName, status: 'Failed' });
         } finally {
             setIsLoading(false);
         }
@@ -98,16 +104,17 @@ const AIGenerator: React.FC<{
 };
 
 const SEOAnalyzer: React.FC = () => {
-    // This component remains largely the same but is now rendered conditionally
     const [topic, setTopic] = useState('');
     const [content, setContent] = useState('');
     const [platform, setPlatform] = useState(SocialProvider.Instagram);
     const [result, setResult] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { addNotification } = useNotification();
+    const { addApiLog } = useActivity();
+    const { user } = useContext(AuthContext);
 
     const handleGenerate = async () => {
-        if (!topic || !content) {
+        if (!topic || !content || !user) {
             addNotification('Please provide both a topic/title and content.', 'error');
             return;
         }
@@ -116,8 +123,10 @@ const SEOAnalyzer: React.FC = () => {
         try {
             const output = await generateSEOTips(topic, content, platform);
             setResult(output);
+            addApiLog({ userEmail: user.email, tool: 'SEO Analyzer', status: 'Success' });
         } catch (error) {
             addNotification(`Error generating tips: ${error instanceof Error ? error.message : "Unknown error"}`, 'error');
+            addApiLog({ userEmail: user.email, tool: 'SEO Analyzer', status: 'Failed' });
         } finally {
             setIsLoading(false);
         }
@@ -149,16 +158,20 @@ const CaptionRewriter: React.FC = () => {
     const [result, setResult] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { addNotification } = useNotification();
+    const { addApiLog } = useActivity();
+    const { user } = useContext(AuthContext);
 
     const handleGenerate = async () => {
-        if (!caption) return;
+        if (!caption || !user) return;
         setIsLoading(true);
         setResult('');
         try {
             const output = await rewriteCaption(caption, style);
             setResult(output);
+            addApiLog({ userEmail: user.email, tool: 'Caption Rewriter', status: 'Success' });
         } catch(error) {
             addNotification(`Error rewriting caption: ${error instanceof Error ? error.message : "Unknown error"}`, 'error');
+            addApiLog({ userEmail: user.email, tool: 'Caption Rewriter', status: 'Failed' });
         } finally {
             setIsLoading(false);
         }
@@ -193,9 +206,11 @@ const ProposalGenerator: React.FC = () => {
     const [result, setResult] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const { addNotification } = useNotification();
+    const { addApiLog } = useActivity();
+    const { user } = useContext(AuthContext);
 
     const handleGenerate = async () => {
-        if (!client || !scope || !price) {
+        if (!client || !scope || !price || !user) {
              addNotification('Please fill all fields.', 'error');
              return;
         };
@@ -204,8 +219,10 @@ const ProposalGenerator: React.FC = () => {
         try {
             const output = await generateProposal(client, scope, price);
             setResult(output);
+            addApiLog({ userEmail: user.email, tool: 'Proposal Generator', status: 'Success' });
         } catch(error) {
             addNotification(`Error generating proposal: ${error instanceof Error ? error.message : "Unknown error"}`, 'error');
+            addApiLog({ userEmail: user.email, tool: 'Proposal Generator', status: 'Failed' });
         } finally {
             setIsLoading(false);
         }
@@ -250,6 +267,7 @@ const ToolsPage: React.FC = () => {
             case 'caption-generator':
                 return <AIGenerator 
                     buttonText="Generate Caption" 
+                    toolName="Caption"
                     inputPlaceholder="Describe your post, e.g., 'A photo of our new coffee blend'" 
                     generateFunction={(prompt, platform, tone) => generateCaption(prompt, tone, platform)}
                     showTone={true}
@@ -257,12 +275,14 @@ const ToolsPage: React.FC = () => {
             case 'hashtag-generator':
                 return <AIGenerator 
                     buttonText="Generate Hashtags"
+                    toolName="Hashtags"
                     inputPlaceholder="Enter the topic of your post, e.g., 'digital marketing tips'"
                     generateFunction={(prompt, platform) => generateHashtags(prompt, platform)}
                 />;
             case 'content-idea-generator':
                  return <AIGenerator
                     buttonText="Generate Ideas"
+                    toolName="Content Ideas"
                     inputPlaceholder="Enter a topic to brainstorm, e.g., 'healthy breakfast recipes'"
                     generateFunction={(prompt, platform) => generateContentIdeas(prompt, platform)}
                 />;
@@ -275,11 +295,13 @@ const ToolsPage: React.FC = () => {
             default:
                 return (
                     <div className="text-center p-8 bg-gray-800 rounded-lg">
-                        <div className="bg-gray-900 p-4 rounded-lg inline-block text-brand-500 text-4xl">
-                           {activeTool.icon || <BotMessageSquare size={40}/>}
+                        <div className="bg-gray-900 p-4 rounded-lg inline-flex items-center justify-center">
+                           {activeTool.icon || <BotMessageSquare size={40} className="text-brand-500"/>}
                         </div>
                         <h3 className="text-2xl font-bold text-white mt-4">{activeTool.name}</h3>
-                        <p className="text-gray-400 mt-2 mb-6 max-w-md mx-auto">{activeTool.description}</p>
+                        <blockquote className="text-gray-400 mt-2 mb-6 max-w-md mx-auto border-l-4 border-gray-700 pl-4 text-left">
+                            {activeTool.description}
+                        </blockquote>
                         <span className="bg-brand-900 text-brand-300 font-semibold px-4 py-2 rounded-full">Coming Soon</span>
                         <p className="text-xs text-gray-500 mt-4">This tool's functionality is under development.</p>
                     </div>

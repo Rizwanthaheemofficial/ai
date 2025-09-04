@@ -1,7 +1,10 @@
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+
+import React, { createContext, useEffect, ReactNode } from 'react';
 import { Post, PostStatus, SocialProvider } from '../types';
 import { MOCK_SCHEDULED_POSTS } from '../constants';
 import { useNotification } from './NotificationContext';
+import useLocalStorage from '../hooks/useLocalStorage';
+import { useActivity } from './ActivityContext';
 
 interface PostContextType {
     posts: Post[];
@@ -16,8 +19,9 @@ export const PostContext = createContext<PostContextType>({
 });
 
 export const PostProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const [posts, setPosts] = useState<Post[]>(MOCK_SCHEDULED_POSTS);
+    const [posts, setPosts] = useLocalStorage<Post[]>('orbit_posts', MOCK_SCHEDULED_POSTS);
     const { addNotification } = useNotification();
+    const { addActivity } = useActivity();
 
     const addPost = (newPostData: { content: string, provider: SocialProvider, scheduledAt: Date, mediaFile: File | null, userId: number }) => {
         const newPost: Post = {
@@ -51,7 +55,13 @@ export const PostProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     if (post.status === PostStatus.Pending && new Date(post.scheduled_at) <= now) {
                         postsUpdated = true;
                         // In a real app, you would notify based on the user ID of the post owner
-                        addNotification(`Your post for ${post.provider} has been published!`, 'success');
+                        addNotification(`A post for ${post.provider} has been published!`, 'success');
+                        
+                        addActivity({
+                            type: 'post',
+                            description: `A post was published to ${post.provider}.`
+                        });
+
                         return { ...post, status: PostStatus.Published };
                     }
                     return post;
@@ -67,7 +77,7 @@ export const PostProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         }, 15000); // Check every 15 seconds for demonstration
 
         return () => clearInterval(interval);
-    }, [addNotification]);
+    }, [addNotification, setPosts, addActivity]);
 
     return (
         <PostContext.Provider value={{ posts, addPost, updatePostStatus }}>

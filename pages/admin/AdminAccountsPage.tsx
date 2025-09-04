@@ -1,7 +1,9 @@
+
 import React from 'react';
-import { MOCK_SOCIAL_ACCOUNTS, MOCK_USERS, SOCIAL_ICONS } from '../../constants';
+import { MOCK_USERS, SOCIAL_ICONS } from '../../constants';
 import { type SocialAccount } from '../../types';
 import { RefreshCw, ShieldAlert, CheckCircle } from 'lucide-react';
+import { useAccounts } from '../../context/AccountContext';
 
 const AccountRow: React.FC<{ account: SocialAccount }> = ({ account }) => {
     const user = MOCK_USERS.find(u => u.id === account.user_id);
@@ -49,6 +51,7 @@ const AccountRow: React.FC<{ account: SocialAccount }> = ({ account }) => {
 }
 
 const AdminAccountsPage: React.FC = () => {
+    const { accounts } = useAccounts();
     return (
         <div className="space-y-8">
             <h1 className="text-3xl font-bold text-white">Connected Accounts</h1>
@@ -65,7 +68,7 @@ const AdminAccountsPage: React.FC = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {MOCK_SOCIAL_ACCOUNTS.map(account => (
+                        {accounts.map(account => (
                             <AccountRow key={account.id} account={account} />
                         ))}
                     </tbody>

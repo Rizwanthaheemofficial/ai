@@ -1,9 +1,10 @@
 
 import React from 'react';
-import { MOCK_SOCIAL_ACCOUNTS, SOCIAL_ICONS } from '../constants';
+import { SOCIAL_ICONS } from '../constants';
 import { Users, MessageSquare, BarChart, ThumbsUp, PlusCircle } from 'lucide-react';
 import { type SocialAccount, type Post } from '../types';
 import { PostContext } from '../context/PostContext';
+import { useAccounts } from '../context/AccountContext';
 
 const StatCard: React.FC<{ title: string; value: string; icon: React.ReactNode; color: string }> = ({ title, value, icon, color }) => (
     <div className="bg-gray-800 p-5 rounded-lg flex items-center">
@@ -59,7 +60,8 @@ const PostItem: React.FC<{ post: Post }> = ({ post }) => {
 
 const DashboardPage: React.FC = () => {
     const { posts } = React.useContext(PostContext);
-    const totalFollowers = MOCK_SOCIAL_ACCOUNTS.reduce((sum, acc) => sum + acc.followers, 0);
+    const { accounts } = useAccounts();
+    const totalFollowers = accounts.reduce((sum, acc) => sum + acc.followers, 0);
     const upcomingPosts = posts.filter(p => p.status === 'Pending').sort((a,b) => new Date(a.scheduled_at).getTime() - new Date(b.scheduled_at).getTime());
 
     return (
@@ -77,12 +79,12 @@ const DashboardPage: React.FC = () => {
                 <div className="lg:col-span-1 space-y-6">
                     <div className="flex justify-between items-center">
                         <h2 className="text-xl font-semibold text-white">Connected Accounts</h2>
-                        <button className="text-brand-500 hover:text-brand-400 text-sm font-medium flex items-center gap-1">
+                        <a href="#/settings" className="text-brand-500 hover:text-brand-400 text-sm font-medium flex items-center gap-1">
                             <PlusCircle size={16} /> Add New
-                        </button>
+                        </a>
                     </div>
                     <div className="space-y-4">
-                        {MOCK_SOCIAL_ACCOUNTS.map(acc => <AccountCard key={acc.id} account={acc} />)}
+                        {accounts.map(acc => <AccountCard key={acc.id} account={acc} />)}
                     </div>
                 </div>
 

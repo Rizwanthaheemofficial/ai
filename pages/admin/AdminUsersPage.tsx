@@ -1,8 +1,10 @@
+
 import React, { useState, useMemo } from 'react';
 import { MOCK_USERS } from '../../constants';
 import { type User } from '../../types';
 import { Search, Edit, KeyRound } from 'lucide-react';
 import { useNotification } from '../../context/NotificationContext';
+import useLocalStorage from '../../hooks/useLocalStorage';
 
 const UserRow: React.FC<{ 
     user: User;
@@ -51,7 +53,7 @@ const UserRow: React.FC<{
 }
 
 const AdminUsersPage: React.FC = () => {
-    const [users, setUsers] = useState<User[]>(MOCK_USERS);
+    const [users, setUsers] = useLocalStorage<User[]>('orbit_users', MOCK_USERS);
     const [searchTerm, setSearchTerm] = useState('');
     const [roleFilter, setRoleFilter] = useState('all');
     const { addNotification } = useNotification();

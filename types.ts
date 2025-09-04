@@ -195,6 +195,12 @@ export interface SeoSettings {
     logoUrl: string; // Base64 string for this prototype
     brandColor: string;
     customDomain: string;
+    keywords: string;
+    faviconUrl: string;
+    ogImageUrl: string;
+    twitterHandle: string;
+    sitemapUrl: string;
+    googleAnalyticsId: string;
 }
 
 export interface AiTokenUsage {
@@ -240,4 +246,8 @@ export interface SystemSettings {
         custom: CustomPaymentGateway;
     };
     maintenanceMode: boolean;
+    featureFlags: {
+        engagementPods: boolean;
+        marketplace: boolean;
+    };
 }

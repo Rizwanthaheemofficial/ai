@@ -1,7 +1,11 @@
-import React from 'react';
+
+import React, { useContext } from 'react';
+import { Navigate } from 'react-router-dom';
 import { MOCK_MARKETPLACE_ITEMS } from '../constants';
 import { type MarketplaceItem } from '../types';
 import { Star, Search, Filter } from 'lucide-react';
+import useLocalStorage from '../hooks/useLocalStorage';
+import { SettingsContext } from '../context/SettingsContext';
 
 const MarketplaceCard: React.FC<{ item: MarketplaceItem }> = ({ item }) => (
     <div className="bg-gray-800 rounded-lg overflow-hidden border border-gray-700 group">
@@ -22,6 +26,13 @@ const MarketplaceCard: React.FC<{ item: MarketplaceItem }> = ({ item }) => (
 );
 
 const MarketplacePage: React.FC = () => {
+    const [items] = useLocalStorage<MarketplaceItem[]>('orbit_marketplace_items', MOCK_MARKETPLACE_ITEMS);
+    const { systemSettings } = useContext(SettingsContext);
+
+    if (!systemSettings.featureFlags?.marketplace) {
+        return <Navigate to="/dashboard" replace />;
+    }
+    
     return (
         <div className="space-y-8">
             <div>
@@ -48,7 +59,7 @@ const MarketplacePage: React.FC = () => {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {MOCK_MARKETPLACE_ITEMS.map(item => (
+                {items.map(item => (
                     <MarketplaceCard key={item.id} item={item} />
                 ))}
             </div>

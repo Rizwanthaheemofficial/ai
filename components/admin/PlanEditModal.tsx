@@ -1,7 +1,7 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { X } from 'lucide-react';
 import { type Plan } from '../../types';
+import { SettingsContext } from '../../context/SettingsContext';
 
 interface PlanEditModalProps {
     isOpen: boolean;
@@ -11,6 +11,7 @@ interface PlanEditModalProps {
 }
 
 const PlanEditModal: React.FC<PlanEditModalProps> = ({ isOpen, onClose, onSave, plan }) => {
+    const { tools } = useContext(SettingsContext);
     const [formData, setFormData] = useState<Omit<Plan, 'id'>>({
         name: '',
         price: 0,
@@ -44,8 +45,22 @@ const PlanEditModal: React.FC<PlanEditModalProps> = ({ isOpen, onClose, onSave, 
     };
     
     const handleFeaturesChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setFormData(prev => ({...prev, features: e.target.value.split('\n') }));
+        const textFeatures = e.target.value.split('\n').filter(f => !tools.some(t => t.name === f));
+        const toolFeatures = formData.features.filter(f => tools.some(t => t.name === f));
+        setFormData(prev => ({...prev, features: [...textFeatures, ...toolFeatures] }));
     }
+
+    const handleToolToggle = (toolName: string, checked: boolean) => {
+        setFormData(prev => {
+            const currentFeatures = new Set(prev.features);
+            if (checked) {
+                currentFeatures.add(toolName);
+            } else {
+                currentFeatures.delete(toolName);
+            }
+            return { ...prev, features: Array.from(currentFeatures) };
+        });
+    };
 
     const handleSubmit = () => {
         const planToSave: Plan = {
@@ -55,6 +70,8 @@ const PlanEditModal: React.FC<PlanEditModalProps> = ({ isOpen, onClose, onSave, 
         };
         onSave(planToSave);
     };
+    
+    const nonToolFeatures = formData.features.filter(f => !tools.some(t => t.name === f));
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50" onClick={onClose}>
@@ -65,7 +82,7 @@ const PlanEditModal: React.FC<PlanEditModalProps> = ({ isOpen, onClose, onSave, 
                         <X size={24} />
                     </button>
                 </div>
-                <div className="p-6 space-y-4">
+                <div className="p-6 space-y-4 max-h-[80vh] overflow-y-auto">
                      <div>
                         <label htmlFor="name" className="block text-sm font-medium text-gray-300 mb-2">Plan Name</label>
                         <input
@@ -94,10 +111,27 @@ const PlanEditModal: React.FC<PlanEditModalProps> = ({ isOpen, onClose, onSave, 
                             id="features"
                             name="features"
                             rows={5}
-                            value={formData.features.join('\n')}
+                            value={nonToolFeatures.join('\n')}
                             onChange={handleFeaturesChange}
                             className="w-full bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-brand-500 focus:border-brand-500"
                         ></textarea>
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-300 mb-2">Included AI Tools</label>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-3 bg-gray-900/50 rounded-md max-h-40 overflow-y-auto">
+                            {tools.map(tool => (
+                                <div key={tool.id} className="flex items-center gap-2">
+                                    <input
+                                        type="checkbox"
+                                        id={`tool-${tool.id}-${plan?.id || 'new'}`}
+                                        checked={formData.features.includes(tool.name)}
+                                        onChange={(e) => handleToolToggle(tool.name, e.target.checked)}
+                                        className="h-4 w-4 rounded border-gray-600 bg-gray-700 text-brand-600 focus:ring-brand-500"
+                                    />
+                                    <label htmlFor={`tool-${tool.id}-${plan?.id || 'new'}`} className="text-sm text-gray-300">{tool.name}</label>
+                                </div>
+                            ))}
+                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                          <input
